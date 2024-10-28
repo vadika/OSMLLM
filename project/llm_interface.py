@@ -1,6 +1,6 @@
 from langchain_community.llms import HuggingFacePipeline
 from langchain_core.prompts import PromptTemplate
-from langchain.chains import LLMChain
+from langchain_core.output_parsers import StrOutputParser
 from transformers import pipeline
 import torch
 
@@ -28,9 +28,10 @@ class OSMQueryInterface:
             Answer:"""
         )
         
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
+        self.output_parser = StrOutputParser()
     
     def process_query(self, query: str, context_features: list) -> str:
         """Process a natural language query about OSM features"""
         context = "\n".join([str(feature) for feature in context_features])
-        return self.chain.run(query=query, context=context)
+        formatted_prompt = self.prompt.format(query=query, context=context)
+        return self.llm.invoke(formatted_prompt)
