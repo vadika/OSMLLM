@@ -1,6 +1,6 @@
 from langchain_community.llms import HuggingFacePipeline
-from langchain.prompts import PromptTemplate
-from langchain.chains.llm import LLMChain
+from langchain_core.prompts import PromptTemplate
+from langchain_core.chains import LLMChain
 from transformers import pipeline
 import torch
 
