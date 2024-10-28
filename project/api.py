@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+import uvicorn
 from pydantic import BaseModel
 from typing import List, Optional
 from project.osm_parser import parse_osm_file
@@ -6,6 +7,18 @@ from project.vector_store import VectorStore
 from project.llm_interface import OSMQueryInterface
 
 app = FastAPI()
+
+def run_app():
+    uvicorn.run(
+        "project.api:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_excludes=["**/pytorch/**", "**/ittapi/**"]
+    )
+
+if __name__ == "__main__":
+    run_app()
 vector_store = VectorStore()
 llm_interface = OSMQueryInterface()
 
