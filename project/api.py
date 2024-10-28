@@ -1,14 +1,20 @@
 from fastapi import FastAPI, HTTPException
 import uvicorn
+import logging
 from pydantic import BaseModel
 from typing import List, Optional
 from project.osm_parser import parse_osm_file
 from project.vector_store import VectorStore
 from project.llm_interface import OSMQueryInterface
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 
 def run_app():
+    logger.info("Starting FastAPI application...")
     uvicorn.run(
         "project.api:app",
         host="0.0.0.0",
@@ -19,8 +25,12 @@ def run_app():
 
 if __name__ == "__main__":
     run_app()
+
+logger.info("Initializing VectorStore...")
 vector_store = VectorStore()
+logger.info("Initializing LLM Interface...")
 llm_interface = OSMQueryInterface()
+logger.info("Application components initialized successfully")
 
 class Query(BaseModel):
     text: str

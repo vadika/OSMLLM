@@ -3,9 +3,13 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 from transformers import pipeline
 import torch
+import logging
+
+logger = logging.getLogger(__name__)
 
 class OSMQueryInterface:
     def __init__(self):
+        logger.info("Initializing LLM pipeline...")
         # Initialize a smaller model suitable for geographic queries
         self.pipe = pipeline(
             "text2text-generation",
@@ -15,6 +19,7 @@ class OSMQueryInterface:
         )
         
         self.llm = HuggingFacePipeline(pipeline=self.pipe)
+        logger.info("LLM pipeline initialized successfully")
         
         self.prompt = PromptTemplate(
             input_variables=["query", "context"],
