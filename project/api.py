@@ -11,7 +11,12 @@ from project.llm_interface import OSMQueryInterface
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Initialize FastAPI app
 app = FastAPI()
+
+class Query(BaseModel):
+    text: str
+    n_results: Optional[int] = 5
 
 # Initialize components
 logger.info("Initializing VectorStore...")
@@ -19,23 +24,6 @@ vector_store = VectorStore()
 logger.info("Initializing LLM Interface...")
 llm_interface = OSMQueryInterface()
 logger.info("Application components initialized successfully")
-
-def run_app():
-    logger.info("Starting FastAPI application...")
-    uvicorn.run(
-        "project.api:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        reload_excludes=["**/pytorch/**", "**/ittapi/**"]
-    )
-
-if __name__ == "__main__":
-    run_app()
-
-class Query(BaseModel):
-    text: str
-    n_results: Optional[int] = 5
 
 @app.post("/load_osm")
 async def load_osm_data(file_path: str):
@@ -59,3 +47,16 @@ async def query_osm(query: Query):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+def run_app():
+    logger.info("Starting FastAPI application...")
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        reload_excludes=["**/pytorch/**", "**/ittapi/**"]
+    )
+
+if __name__ == "__main__":
+    run_app()
