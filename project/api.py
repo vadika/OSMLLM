@@ -13,6 +13,13 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# Initialize components
+logger.info("Initializing VectorStore...")
+vector_store = VectorStore()
+logger.info("Initializing LLM Interface...")
+llm_interface = OSMQueryInterface()
+logger.info("Application components initialized successfully")
+
 def run_app():
     logger.info("Starting FastAPI application...")
     uvicorn.run(
@@ -25,12 +32,6 @@ def run_app():
 
 if __name__ == "__main__":
     run_app()
-
-logger.info("Initializing VectorStore...")
-vector_store = VectorStore()
-logger.info("Initializing LLM Interface...")
-llm_interface = OSMQueryInterface()
-logger.info("Application components initialized successfully")
 
 class Query(BaseModel):
     text: str
