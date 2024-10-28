@@ -1,9 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
-from osm_parser import parse_osm_file
-from vector_store import VectorStore
-from llm_interface import OSMQueryInterface
+from project.osm_parser import parse_osm_file
+from project.vector_store import VectorStore
+from project.llm_interface import OSMQueryInterface
 
 app = FastAPI()
 vector_store = VectorStore()
