@@ -28,9 +28,13 @@ def get_llm_interface():
     return llm_interface
 
 @app.post("/load_osm")
-async def load_osm_data(file_path: str, vector_store: VectorStore = Depends(get_vector_store)):
+class OSMLoadRequest(BaseModel):
+    file_path: str
+
+@app.post("/load_osm")
+async def load_osm_data(request: OSMLoadRequest, vector_store: VectorStore = Depends(get_vector_store)):
     try:
-        features = parse_osm_file(file_path)
+        features = parse_osm_file(request.file_path)
         vector_store.add_features(features)
         return {"message": f"Loaded {len(features)} features"}
     except Exception as e:

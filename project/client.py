@@ -13,7 +13,7 @@ class OSMClient:
         """Load OSM data from a file into the vector store"""
         url = f"{self.base_url}/load_osm"
         try:
-            response = requests.post(url, json=file_path)
+            response = requests.post(url, json={"file_path": file_path})
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
@@ -41,7 +41,7 @@ def main():
     # Example usage
     try:
         # Load some OSM data
-        result = client.load_osm_data("path/to/your/osm/file.pbf")
+        result = client.load_osm_data("./data/map.osm.pbf")
         logger.info(f"Load result: {result}")
         
         # Make a query
