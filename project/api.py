@@ -48,15 +48,12 @@ async def query_osm(query: Query):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-def run_app():
+if __name__ == "__main__":
     logger.info("Starting FastAPI application...")
     uvicorn.run(
-        app,
+        "project.api:app",
         host="0.0.0.0",
         port=8000,
         reload=True,
         reload_excludes=["**/pytorch/**", "**/ittapi/**"]
     )
-
-if __name__ == "__main__":
-    run_app()
