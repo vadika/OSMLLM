@@ -1,5 +1,4 @@
 from fastapi import FastAPI, HTTPException
-import uvicorn
 import logging
 from pydantic import BaseModel
 from typing import List, Optional
@@ -47,13 +46,3 @@ async def query_osm(query: Query):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-if __name__ == "__main__":
-    logger.info("Starting FastAPI application...")
-    uvicorn.run(
-        "project.api:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        reload_excludes=["**/pytorch/**", "**/ittapi/**"]
-    )
