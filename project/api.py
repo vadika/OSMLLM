@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends
 import logging
 from pydantic import BaseModel
 from typing import List, Optional
@@ -17,15 +17,16 @@ class Query(BaseModel):
     text: str
     n_results: Optional[int] = 5
 
-# Initialize components
-logger.info("Initializing VectorStore...")
-vector_store = VectorStore()
-logger.info("Initializing LLM Interface...")
-llm_interface = OSMQueryInterface()
-logger.info("Application components initialized successfully")
+def get_vector_store():
+    vector_store = VectorStore()
+    return vector_store
+
+def get_llm_interface():
+    llm_interface = OSMQueryInterface()
+    return llm_interface
 
 @app.post("/load_osm")
-async def load_osm_data(file_path: str):
+async def load_osm_data(file_path: str, vector_store: VectorStore = Depends(get_vector_store)):
     try:
         features = parse_osm_file(file_path)
         vector_store.add_features(features)
@@ -34,7 +35,11 @@ async def load_osm_data(file_path: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/query")
-async def query_osm(query: Query):
+async def query_osm(
+    query: Query,
+    vector_store: VectorStore = Depends(get_vector_store),
+    llm_interface: OSMQueryInterface = Depends(get_llm_interface)
+):
     try:
         # First get relevant features from vector store
         context_features = vector_store.query(query.text, query.n_results)
