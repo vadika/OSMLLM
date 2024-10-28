@@ -17,12 +17,14 @@ class Query(BaseModel):
     text: str
     n_results: Optional[int] = 5
 
+# Initialize components once at module level
+vector_store = VectorStore()
+llm_interface = OSMQueryInterface()
+
 def get_vector_store():
-    vector_store = VectorStore()
     return vector_store
 
 def get_llm_interface():
-    llm_interface = OSMQueryInterface()
     return llm_interface
 
 @app.post("/load_osm")
