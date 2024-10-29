@@ -34,6 +34,7 @@ class OSMLoadRequest(BaseModel):
 @app.post("/load_osm")
 async def load_osm_data(request: OSMLoadRequest, vector_store: VectorStore = Depends(get_vector_store)):
     try:
+        logger.info(f"Received load_osm request: {request}")
         features = parse_osm_file(request.file_path)
         vector_store.add_features(features)
         return {"message": f"Loaded {len(features)} features"}
