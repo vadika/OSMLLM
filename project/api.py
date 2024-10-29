@@ -27,7 +27,6 @@ def get_vector_store():
 def get_llm_interface():
     return llm_interface
 
-@app.post("/load_osm")
 class OSMLoadRequest(BaseModel):
     file_path: str
 
