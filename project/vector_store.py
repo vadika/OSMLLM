@@ -2,6 +2,9 @@ import chromadb
 from chromadb.config import Settings
 from typing import List, Dict
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 class VectorStore:
     def __init__(self, persist_directory: str = "chroma_db"):
@@ -13,6 +16,8 @@ class VectorStore:
         
     def add_features(self, features: List[Dict]):
         """Add OSM features to vector store"""
+        logger.info(f"Preparing to add {len(features)} features to vector store")
+        
         documents = [json.dumps(feature) for feature in features]
         ids = [str(i) for i in range(len(documents))]
         metadatas = [
@@ -23,11 +28,13 @@ class VectorStore:
             for feature in features
         ]
         
+        logger.info("Adding features to ChromaDB collection...")
         self.collection.add(
             documents=documents,
             ids=ids,
             metadatas=metadatas
         )
+        logger.info("Successfully added features to vector store")
     
     def query(self, query_text: str, n_results: int = 5):
         """Query the vector store"""
