@@ -1,9 +1,22 @@
 import osmium
 import json
 import logging
+import multiprocessing as mp
 from typing import Dict, List
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+def get_file_size(file_path: str) -> int:
+    """Get file size in bytes"""
+    return Path(file_path).stat().st_size
+
+def process_chunk(chunk_info: tuple) -> List[Dict]:
+    """Process a chunk of the OSM file"""
+    file_path, start_pos, size = chunk_info
+    handler = OSMHandler()
+    handler.apply_file(file_path, locations=True, start_pos=start_pos, size=size)
+    return handler.features
 
 class OSMHandler(osmium.SimpleHandler):
     def __init__(self):
@@ -31,9 +44,36 @@ class OSMHandler(osmium.SimpleHandler):
             self.features.append(feature)
 
 def parse_osm_file(file_path: str) -> List[Dict]:
-    """Parse OSM protobuf file and return list of features"""
+    """Parse OSM protobuf file and return list of features using all available CPUs"""
     logger.info(f"Starting to parse OSM file: {file_path}")
-    handler = OSMHandler()
-    handler.apply_file(file_path)
-    logger.info(f"Finished parsing OSM file. Found {len(handler.features)} features")
-    return handler.features
+    
+    # Get file size and calculate chunks
+    file_size = get_file_size(file_path)
+    cpu_count = mp.cpu_count()
+    chunk_size = file_size // cpu_count
+    
+    # Create chunks with overlap to ensure we don't miss features
+    chunks = []
+    for i in range(cpu_count):
+        start_pos = i * chunk_size
+        # Add overlap for last chunk
+        size = chunk_size + (file_size - chunk_size * cpu_count if i == cpu_count - 1 else 0)
+        chunks.append((file_path, start_pos, size))
+    
+    logger.info(f"Processing file in {cpu_count} parallel chunks")
+    
+    # Process chunks in parallel
+    with mp.Pool(processes=cpu_count) as pool:
+        chunk_results = pool.map(process_chunk, chunks)
+    
+    # Combine results
+    features = []
+    for chunk in chunk_results:
+        features.extend(chunk)
+    
+    # Remove potential duplicates based on type and id
+    unique_features = {(f['type'], f['id']): f for f in features}.values()
+    features = list(unique_features)
+    
+    logger.info(f"Finished parsing OSM file. Found {len(features)} unique features")
+    return features
