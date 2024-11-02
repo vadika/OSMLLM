@@ -33,9 +33,12 @@ class OSMLoadRequest(BaseModel):
 async def load_osm_data(request: OSMLoadRequest, vector_store: VectorStore = Depends(get_vector_store)):
     try:
         logger.info(f"Received load_osm request: {request}")
-        features = parse_osm_file(request.file_path)
-        vector_store.add_features(features)
-        return {"message": f"Loaded {len(features)} features"}
+        
+        def process_batch(batch: List[Dict]):
+            vector_store.add_features(batch)
+        
+        total_features = parse_osm_file(request.file_path, batch_callback=process_batch)
+        return {"message": f"Loaded {total_features} features"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

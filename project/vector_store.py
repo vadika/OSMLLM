@@ -15,30 +15,41 @@ class VectorStore:
         ))
         self.collection = self.client.get_or_create_collection("osm_features")
         
-    def add_features(self, features: List[Dict]):
-        """Add OSM features to vector store"""
-        logger.info(f"Preparing to add {len(features)} features to vector store")
+    def add_features(self, features: List[Dict], batch_size: int = 1000):
+        """Add OSM features to vector store in batches"""
+        logger.info(f"Preparing to add features to vector store")
         
-        logger.info("Preparing feature data...")
-        documents = []
-        ids = []
-        metadatas = []
-        
-        for i, feature in enumerate(tqdm(features, desc="Processing features", unit="feature")):
-            documents.append(json.dumps(feature))
-            ids.append(str(i))
-            metadatas.append({
-                'type': feature['type'],
-                'tags': json.dumps(feature['tags'])
-            })
-        
-        logger.info("Adding features to ChromaDB collection...")
-        self.collection.add(
-            documents=documents,
-            ids=ids,
-            metadatas=metadatas
-        )
-        logger.info("Successfully added features to vector store")
+        total = 0
+        for i in range(0, len(features), batch_size):
+            batch = features[i:i + batch_size]
+            
+            documents = []
+            ids = []
+            metadatas = []
+            
+            for j, feature in enumerate(batch):
+                documents.append(json.dumps(feature))
+                ids.append(f"{total + j}")
+                metadatas.append({
+                    'type': feature['type'],
+                    'tags': json.dumps(feature['tags'])
+                })
+            
+            self.collection.add(
+                documents=documents,
+                ids=ids,
+                metadatas=metadatas
+            )
+            
+            total += len(batch)
+            logger.info(f"Added batch of {len(batch)} features. Total: {total}")
+            
+            # Clear lists to free memory
+            documents.clear()
+            ids.clear()
+            metadatas.clear()
+            
+        logger.info(f"Successfully added {total} features to vector store")
     
     def query(self, query_text: str, n_results: int = 5):
         """Query the vector store"""
