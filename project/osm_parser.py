@@ -59,7 +59,9 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     try:
         cpu_count = mp.cpu_count()
         chunks = [(file_path,) for _ in range(cpu_count)]  # Each process will process the full file
-    
+    except Exception as e:
+        raise RuntimeError(f"Failed to setup parallel processing: {str(e)}")
+        
     logger.info(f"Processing file in {cpu_count} parallel chunks")
     
     # Process chunks in parallel with progress bar
