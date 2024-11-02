@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException, Depends
 import logging
 from pydantic import BaseModel
@@ -34,13 +35,35 @@ async def load_osm_data(request: OSMLoadRequest, vector_store: VectorStore = Dep
     try:
         logger.info(f"Received load_osm request: {request}")
         
-        def process_batch(batch: List[Dict]):
-            vector_store.add_features(batch)
+        # Validate file exists and is accessible
+        if not os.path.exists(request.file_path):
+            logger.error(f"File not found: {request.file_path}")
+            raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
         
+        if not os.access(request.file_path, os.R_OK):
+            logger.error(f"File not readable: {request.file_path}")
+            raise HTTPException(status_code=403, detail=f"File not readable: {request.file_path}")
+        
+        def process_batch(batch: List[Dict]):
+            try:
+                vector_store.add_features(batch)
+            except Exception as e:
+                logger.error(f"Error processing batch: {str(e)}")
+                raise
+        
+        logger.info(f"Starting to parse OSM file: {request.file_path}")
         total_features = parse_osm_file(request.file_path, batch_callback=process_batch)
+        logger.info(f"Successfully loaded {total_features} features")
+        
         return {"message": f"Loaded {total_features} features"}
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.exception(f"Error loading OSM data: {str(e)}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error loading OSM data: {str(e)}"
+        )
 
 @app.post("/query")
 async def query_osm(
