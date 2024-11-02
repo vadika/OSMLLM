@@ -17,7 +17,7 @@ def process_chunk(chunk_info: tuple) -> List[Dict]:
     try:
         file_path, start_pos, size = chunk_info
         handler = OSMHandler()
-        handler.apply_file(file_path, locations=True)  # Remove start_pos and size parameters
+        handler.apply_file(file_path, locations=True, idx="flex_mem")
         return handler.features
     except Exception as e:
         logger.error(f"Error processing chunk at position {start_pos}: {str(e)}")
