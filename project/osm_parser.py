@@ -13,7 +13,7 @@ def get_file_size(file_path: str) -> int:
     """Get file size in bytes"""
     return Path(file_path).stat().st_size
 
-def process_chunk(chunk_info: tuple) -> List[Dict]:
+def process_chunk(chunk_info: tuple) -> List[List[Dict]]:
     """Process a chunk of the OSM file"""
     try:
         file_path, chunk_id = chunk_info
@@ -32,11 +32,13 @@ def process_chunk(chunk_info: tuple) -> List[Dict]:
         
         # Return features in smaller batches
         batch_size = 10000
+        batches = []
         for i in range(0, len(handler.features), batch_size):
-            yield handler.features[i:i + batch_size]
+            batches.append(handler.features[i:i + batch_size])
         
         # Clear handler features to free memory
         handler.features = []
+        return batches
     except Exception as e:
         logger.error(f"Process {mp.current_process().name} failed on chunk {chunk_id}: {str(e)}")
         return []
@@ -95,8 +97,8 @@ def parse_osm_file(file_path: str, batch_callback=None) -> List[Dict]:
         total_features = 0
         
         with mp.Pool(processes=cpu_count) as pool:
-            for chunk_batch in pool.imap_unordered(process_chunk, chunks):
-                for batch in chunk_batch:
+            for batches in pool.imap_unordered(process_chunk, chunks):
+                for batch in batches:
                     # Deduplicate features in each batch
                     unique_batch = []
                     for feature in batch:
