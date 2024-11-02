@@ -6,12 +6,11 @@ from project.osm_parser import parse_osm_file
 from project.vector_store import VectorStore
 from project.llm_interface import OSMQueryInterface
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 # Initialize FastAPI app
-app = FastAPI()
+app = FastAPI(title="OSM LLM API")
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 class Query(BaseModel):
     text: str
