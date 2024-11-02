@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends
 import logging
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 from project.osm_parser import parse_osm_file
 from project.vector_store import VectorStore
 from project.llm_interface import OSMQueryInterface
