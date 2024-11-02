@@ -16,19 +16,13 @@ def get_file_size(file_path: str) -> int:
 def process_chunk(chunk_info: tuple) -> List[Dict]:
     """Process a chunk of the OSM file"""
     try:
-        file_path, chunk_id, bounds = chunk_info
+        file_path, chunk_id = chunk_info
         process_name = mp.current_process().name
         logger.info(f"Process {process_name} starting chunk {chunk_id}")
         
         handler = OSMHandler()
         start_time = time.time()
-        
-        # Process file in smaller segments using bounds
-        if bounds:
-            handler.apply_file(file_path, locations=True, idx="flex_mem", 
-                             bbox=bounds)
-        else:
-            handler.apply_file(file_path, locations=True, idx="flex_mem")
+        handler.apply_file(file_path, locations=True, idx="flex_mem")
             
         processing_time = time.time() - start_time
         
@@ -79,27 +73,15 @@ def parse_osm_file(file_path: str, batch_callback=None) -> List[Dict]:
     if not Path(file_path).exists():
         raise FileNotFoundError(f"OSM file not found: {file_path}")
     
-    # Calculate geographic bounds for chunking
+    # Setup parallel processing
     try:
         cpu_count = mp.cpu_count()
         file_size = get_file_size(file_path)
         logger.info(f"Initializing parallel processing with {cpu_count} processes")
         logger.info(f"File size: {file_size / (1024*1024):.2f} MB")
-        
-        # Create chunks with geographic bounds
-        handler = OSMHandler()
-        handler.apply_file(file_path, locations=True)
-        bounds = handler.get_bounds()
-        lat_step = (bounds['max_lat'] - bounds['min_lat']) / cpu_count
-        chunks = []
-        for i in range(cpu_count):
-            chunk_bounds = (
-                bounds['min_lon'],
-                bounds['min_lat'] + (i * lat_step),
-                bounds['max_lon'],
-                bounds['min_lat'] + ((i + 1) * lat_step)
-            )
-            chunks.append((file_path, i, chunk_bounds))
+            
+        # Create chunks based on process count
+        chunks = [(file_path, i) for i in range(cpu_count)]
         
         start_time = time.time()
     except Exception as e:
