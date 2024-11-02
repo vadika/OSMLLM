@@ -17,7 +17,7 @@ def process_chunk(chunk_info: tuple) -> List[Dict]:
     try:
         file_path, start_pos, size = chunk_info
         handler = OSMHandler()
-        handler.apply_file(file_path, locations=True, start_pos=start_pos, size=size)
+        handler.apply_file(file_path, locations=True)  # Remove start_pos and size parameters
         return handler.features
     except Exception as e:
         logger.error(f"Error processing chunk at position {start_pos}: {str(e)}")
@@ -55,21 +55,10 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     if not Path(file_path).exists():
         raise FileNotFoundError(f"OSM file not found: {file_path}")
         
-    # Get file size and calculate chunks
+    # Process in parallel using process pool
     try:
-        file_size = get_file_size(file_path)
-    except Exception as e:
-        raise RuntimeError(f"Failed to get file size: {str(e)}")
-    cpu_count = mp.cpu_count()
-    chunk_size = file_size // cpu_count
-    
-    # Create chunks with overlap to ensure we don't miss features
-    chunks = []
-    for i in range(cpu_count):
-        start_pos = i * chunk_size
-        # Add overlap for last chunk
-        size = chunk_size + (file_size - chunk_size * cpu_count if i == cpu_count - 1 else 0)
-        chunks.append((file_path, start_pos, size))
+        cpu_count = mp.cpu_count()
+        chunks = [(file_path,) for _ in range(cpu_count)]  # Each process will process the full file
     
     logger.info(f"Processing file in {cpu_count} parallel chunks")
     
