@@ -14,10 +14,14 @@ def get_file_size(file_path: str) -> int:
 
 def process_chunk(chunk_info: tuple) -> List[Dict]:
     """Process a chunk of the OSM file"""
-    file_path, start_pos, size = chunk_info
-    handler = OSMHandler()
-    handler.apply_file(file_path, locations=True, start_pos=start_pos, size=size)
-    return handler.features
+    try:
+        file_path, start_pos, size = chunk_info
+        handler = OSMHandler()
+        handler.apply_file(file_path, locations=True, start_pos=start_pos, size=size)
+        return handler.features
+    except Exception as e:
+        logger.error(f"Error processing chunk at position {start_pos}: {str(e)}")
+        return []
 
 class OSMHandler(osmium.SimpleHandler):
     def __init__(self):
@@ -48,8 +52,14 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     """Parse OSM protobuf file and return list of features using all available CPUs"""
     logger.info(f"Starting to parse OSM file: {file_path}")
     
+    if not Path(file_path).exists():
+        raise FileNotFoundError(f"OSM file not found: {file_path}")
+        
     # Get file size and calculate chunks
-    file_size = get_file_size(file_path)
+    try:
+        file_size = get_file_size(file_path)
+    except Exception as e:
+        raise RuntimeError(f"Failed to get file size: {str(e)}")
     cpu_count = mp.cpu_count()
     chunk_size = file_size // cpu_count
     
@@ -64,13 +74,16 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     logger.info(f"Processing file in {cpu_count} parallel chunks")
     
     # Process chunks in parallel with progress bar
-    with mp.Pool(processes=cpu_count) as pool:
-        chunk_results = list(tqdm(
-            pool.imap(process_chunk, chunks),
-            total=cpu_count,
-            desc="Parsing OSM file",
-            unit="chunk"
-        ))
+    try:
+        with mp.Pool(processes=cpu_count) as pool:
+            chunk_results = list(tqdm(
+                pool.imap(process_chunk, chunks),
+                total=cpu_count,
+                desc="Parsing OSM file",
+                unit="chunk"
+            ))
+    except Exception as e:
+        raise RuntimeError(f"Failed during parallel processing: {str(e)}")
     
     # Combine results
     features = []
