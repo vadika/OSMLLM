@@ -3,6 +3,7 @@ from chromadb.config import Settings
 from typing import List, Dict
 import json
 import logging
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -18,15 +19,18 @@ class VectorStore:
         """Add OSM features to vector store"""
         logger.info(f"Preparing to add {len(features)} features to vector store")
         
-        documents = [json.dumps(feature) for feature in features]
-        ids = [str(i) for i in range(len(documents))]
-        metadatas = [
-            {
+        logger.info("Preparing feature data...")
+        documents = []
+        ids = []
+        metadatas = []
+        
+        for i, feature in enumerate(tqdm(features, desc="Processing features", unit="feature")):
+            documents.append(json.dumps(feature))
+            ids.append(str(i))
+            metadatas.append({
                 'type': feature['type'],
                 'tags': json.dumps(feature['tags'])
-            } 
-            for feature in features
-        ]
+            })
         
         logger.info("Adding features to ChromaDB collection...")
         self.collection.add(

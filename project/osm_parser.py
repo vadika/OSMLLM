@@ -4,6 +4,7 @@ import logging
 import multiprocessing as mp
 from typing import Dict, List
 from pathlib import Path
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +63,14 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     
     logger.info(f"Processing file in {cpu_count} parallel chunks")
     
-    # Process chunks in parallel
+    # Process chunks in parallel with progress bar
     with mp.Pool(processes=cpu_count) as pool:
-        chunk_results = pool.map(process_chunk, chunks)
+        chunk_results = list(tqdm(
+            pool.imap(process_chunk, chunks),
+            total=cpu_count,
+            desc="Parsing OSM file",
+            unit="chunk"
+        ))
     
     # Combine results
     features = []
