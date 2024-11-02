@@ -1,6 +1,7 @@
 import osmium
 import json
 import logging
+import time
 import multiprocessing as mp
 from typing import Dict, List
 from pathlib import Path
@@ -15,12 +16,22 @@ def get_file_size(file_path: str) -> int:
 def process_chunk(chunk_info: tuple) -> List[Dict]:
     """Process a chunk of the OSM file"""
     try:
-        file_path, start_pos, size = chunk_info
+        file_path, chunk_id, _ = chunk_info
+        process_name = mp.current_process().name
+        logger.info(f"Process {process_name} starting chunk {chunk_id}")
+        
         handler = OSMHandler()
+        start_time = time.time()
         handler.apply_file(file_path, locations=True, idx="flex_mem")
+        processing_time = time.time() - start_time
+        
+        feature_count = len(handler.features)
+        logger.info(f"Process {process_name} completed chunk {chunk_id}: "
+                   f"Found {feature_count} features in {processing_time:.2f} seconds")
+        
         return handler.features
     except Exception as e:
-        logger.error(f"Error processing chunk at position {start_pos}: {str(e)}")
+        logger.error(f"Process {mp.current_process().name} failed on chunk {chunk_id}: {str(e)}")
         return []
 
 class OSMHandler(osmium.SimpleHandler):
@@ -58,11 +69,15 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     # Process in parallel using process pool
     try:
         cpu_count = mp.cpu_count()
-        chunks = [(file_path,) for _ in range(cpu_count)]  # Each process will process the full file
+        chunks = [(file_path, i, None) for i in range(cpu_count)]  # Add chunk ID
+        logger.info(f"Initializing parallel processing with {cpu_count} processes")
+        logger.info(f"File size: {get_file_size(file_path) / (1024*1024):.2f} MB")
+        
+        start_time = time.time()
     except Exception as e:
         raise RuntimeError(f"Failed to setup parallel processing: {str(e)}")
         
-    logger.info(f"Processing file in {cpu_count} parallel chunks")
+    logger.info(f"Starting parallel processing with {cpu_count} chunks")
     
     # Process chunks in parallel with progress bar
     try:
@@ -85,5 +100,8 @@ def parse_osm_file(file_path: str) -> List[Dict]:
     unique_features = {(f['type'], f['id']): f for f in features}.values()
     features = list(unique_features)
     
-    logger.info(f"Finished parsing OSM file. Found {len(features)} unique features")
+    total_time = time.time() - start_time
+    logger.info(f"Finished parsing OSM file in {total_time:.2f} seconds")
+    logger.info(f"Found {len(features)} unique features")
+    logger.info(f"Processing rate: {len(features)/total_time:.2f} features/second")
     return features
