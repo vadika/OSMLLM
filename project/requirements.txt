@@ -1,5 +1,5 @@
 protobuf>=3.20.0
-osmium-tool
+osmium
 langchain>=0.0.300
 chromadb>=0.4.0
 transformers>=4.30.0
