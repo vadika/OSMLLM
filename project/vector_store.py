@@ -4,11 +4,17 @@ from typing import List, Dict
 import json
 import logging
 from tqdm import tqdm
+import torch
+from sentence_transformers import SentenceTransformer
 
 logger = logging.getLogger(__name__)
 
 class VectorStore:
     def __init__(self, persist_directory: str = "chroma_db"):
+        # Initialize embedding model with GPU support
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+        self.embedding_model = SentenceTransformer('all-MiniLM-L6-v2', device=device)
+        
         self.client = chromadb.Client(Settings(
             persist_directory=persist_directory,
             anonymized_telemetry=False

@@ -37,6 +37,13 @@ class OSMQueryInterface:
     
     def process_query(self, query: str, context_features: list) -> str:
         """Process a natural language query about OSM features"""
+        # Batch process multiple features at once
         context = "\n".join([str(feature) for feature in context_features])
         formatted_prompt = self.prompt.format(query=query, context=context)
-        return self.llm.invoke(formatted_prompt)
+        
+        # Use batch processing for better GPU utilization
+        return self.llm.invoke(
+            formatted_prompt,
+            batch_size=8,  # Adjust based on your GPU memory
+            temperature=0.7
+        )
