@@ -22,8 +22,8 @@ def process_chunk(chunk_info: tuple) -> List[List[Dict]]:
         
         handler = OSMHandler()
         start_time = time.time()
-        # Use memory mapping and dense index for better performance
-        handler.apply_file(file_path, locations=True, idx="dense_mmap_array")
+        # Use default index type which is always available
+        handler.apply_file(file_path, locations=True)
             
         processing_time = time.time() - start_time
         
