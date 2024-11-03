@@ -22,7 +22,8 @@ def process_chunk(chunk_info: tuple) -> List[List[Dict]]:
         
         handler = OSMHandler()
         start_time = time.time()
-        handler.apply_file(file_path, locations=True, idx="flex_mem")
+        # Use memory mapping and dense index for better performance
+        handler.apply_file(file_path, locations=True, idx="dense_mmap_array")
             
         processing_time = time.time() - start_time
         
@@ -77,12 +78,13 @@ def parse_osm_file(file_path: str, batch_callback=None) -> List[Dict]:
     
     # Setup parallel processing
     try:
-        cpu_count = mp.cpu_count()
+        # Use 75% of available CPUs to avoid overwhelming the system
+        cpu_count = max(1, int(mp.cpu_count() * 0.75))
         file_size = get_file_size(file_path)
         logger.info(f"Initializing parallel processing with {cpu_count} processes")
         logger.info(f"File size: {file_size / (1024*1024):.2f} MB")
             
-        # Create chunks based on process count
+        # Create chunks based on optimized process count
         chunks = [(file_path, i) for i in range(cpu_count)]
         
         start_time = time.time()
