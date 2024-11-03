@@ -27,9 +27,11 @@ class VectorStore:
             ids = []
             metadatas = []
             
-            for j, feature in enumerate(batch):
+            for feature in batch:
                 documents.append(json.dumps(feature))
-                ids.append(f"{total + j}")
+                # Create unique ID combining feature type and ID
+                unique_id = f"{feature['type']}_{feature['id']}"
+                ids.append(unique_id)
                 metadatas.append({
                     'type': feature['type'],
                     'tags': json.dumps(feature['tags'])
